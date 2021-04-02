@@ -1,0 +1,6 @@
+.DS_Store
+.vscode
+__pycache__
+dl.cfg
+.workspace-config.json
+sparkify-env
