@@ -4,6 +4,5 @@ __pycache__
 dl.cfg
 .workspace-config.json
 sparkify-env
-/demo_data
-/demo_data_processed
+demo_data/
 processed_data/
