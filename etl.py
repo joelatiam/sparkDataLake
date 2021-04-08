@@ -3,7 +3,8 @@ from datetime import datetime
 import os
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import udf, col
-from pyspark.sql.functions import year, month, dayofmonth, hour, weekofyear, date_format
+from pyspark.sql.functions import year, month, dayofmonth, hour, weekofyear,\
+    date_format, monotonically_increasing_id
 from pyspark.sql.types import StructType as R, StructField as Fld, DoubleType as Dbl,\
     StringType as Str, IntegerType as Int, LongType as Long, ShortType as Short,\
     DateType as Date
@@ -104,12 +105,12 @@ def process_log_data(spark, input_data, output_data):
     # and partitioned by year and month on parquet files
     time_table = df.select(
         col("timestamp").alias("start_time"),
-        hour("datetime").alias("hour"),
-        dayofmonth("datetime").alias("day"),
-        weekofyear("datetime").alias("week"),
-        month("datetime").alias("month"),
-        year("datetime").alias("year"),
-        date_format("datetime","E").alias("weekday")
+        hour("datetime").alias("hour").cast(Short()),
+        dayofmonth("datetime").alias("day").cast(Short()),
+        weekofyear("datetime").alias("week").cast(Short()),
+        month("datetime").alias("month").cast(Short()),
+        year("datetime").alias("year").cast(Short()),
+        date_format("datetime","E").alias("weekday").cast(Short())
     )
     
     time_table_out_path = os.path.join(output_data, "time/")
@@ -136,8 +137,9 @@ def process_log_data(spark, input_data, output_data):
         (df.song == song_df.title)
         & (df.artist == song_df.artist_name)
         & (df.length == song_df.duration),
-        'left_outer')\
+        "left_outer")\
         .select(
+            monotonically_increasing_id().alias("songplay_id"),
             col("timestamp").alias("start_time"),
             col("userId").alias('user_id'),
             df.level,
@@ -160,8 +162,8 @@ def process_log_data(spark, input_data, output_data):
 
 def main():
     spark = create_spark_session()
-    input_data = DATA_SOURCE # use "s3a://udacity-dend/"  for prod 
-    output_data = DATA_DESTINATION # use s3 location for prod
+    input_data = DATA_SOURCE
+    output_data = DATA_DESTINATION
     
     process_song_data(spark, input_data, output_data)    
     process_log_data(spark, input_data, output_data)
